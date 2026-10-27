@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>250ª Zona Eleitoral — resultado presidencial 2026</title>
+<link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+:root{--ink:#202a32;--muted:#5c666d;--bg:#f4f2ed;--panel:#fffefa;--lula:#b52e43;--flavio:#275c91;--line:#d9d9d4}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+header{height:68px;padding:9px 16px;background:var(--ink);color:white;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{font-size:clamp(16px,1.5vw,22px);margin:0 0 3px;font-weight:800;letter-spacing:.02em}header p{margin:0;color:#dce3e7;font-size:11px}
+.actions{display:flex;gap:7px;flex-shrink:0}button{border:0;border-radius:6px;padding:8px 10px;font-size:11px;font-weight:750;cursor:pointer}#export{background:#fff;color:var(--ink)}#reset{background:#41505b;color:white}button:disabled{opacity:.5;cursor:wait}
+.summary{min-height:43px;display:flex;align-items:center;gap:18px;padding:7px 16px;background:#e7e5df;border-bottom:1px solid #d2d0c8;flex-wrap:wrap}
+.stat{display:flex;gap:7px;align-items:baseline}.swatch{display:inline-block;width:8px;height:15px;border-radius:3px;vertical-align:middle}.stat strong{font-size:13px}.stat small{font-size:10px;color:var(--muted)}
+.main{height:calc(100vh - 111px);min-height:570px;display:grid;grid-template-columns:minmax(0,1.7fr) minmax(475px,1fr);gap:8px;padding:8px}
+.mapcard,.side{border:1px solid #d6d4cc;border-radius:8px;overflow:hidden;background:var(--panel);min-height:0;box-shadow:0 2px 8px #202a320a}.mapwrap{height:100%;position:relative}#map{height:100%;width:100%}
+.map-label{position:absolute;z-index:3;top:9px;left:9px;background:#fffefaee;border:1px solid #d6d4cc;border-radius:5px;padding:5px 7px;font-size:9px;font-weight:800;letter-spacing:.04em;pointer-events:none}
+.maplegend{position:absolute;z-index:3;bottom:18px;left:8px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#fffefaed;padding:6px 8px;border:1px solid #d6d4cc;border-radius:6px;font-size:9px;font-weight:700;pointer-events:none;max-width:calc(100% - 16px)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}.sizes{display:inline-flex;align-items:center;gap:3px;margin-right:3px}.sizes i{display:inline-block;border-radius:50%;border:1px solid #59636a;background:#c9c9c4}.sizes i:nth-child(1){width:5px;height:5px}.sizes i:nth-child(2){width:9px;height:9px}.sizes i:nth-child(3){width:14px;height:14px}
+.side{display:flex;flex-direction:column}.sidehead{padding:8px 10px 7px;border-bottom:1px solid var(--line);flex-shrink:0}.sidehead h2{font-size:13px;margin:0 0 3px}.sidehead p{font-size:9px;line-height:1.2;margin:0;color:var(--muted)}
+.list{flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(13,minmax(0,1fr));gap:4px;padding:5px}
+.item{width:100%;height:100%;min-width:0;min-height:0;border:1px solid #e4e2da;border-radius:5px;padding:1px 4px;background:#fff;cursor:pointer;text-align:left;color:inherit;display:flex;flex-direction:column;justify-content:center;gap:1px;overflow:hidden}.item:hover,.item.active{outline:1.5px solid #6d7b84;outline-offset:-1px}.itemtop{height:10px;min-height:10px;display:flex;align-items:center;gap:3px}.number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 12px;width:12px;height:12px;border-radius:50%;color:#fff;font-size:6.5px;font-weight:850}.place{min-width:0;display:block;font-size:8.3px;font-weight:800;line-height:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.votes{font-size:7.8px;display:flex;flex-direction:column;gap:0;line-height:8px;white-space:nowrap;overflow:hidden}.votes .l{color:var(--lula)}.votes .f{color:var(--flavio)}.margin{font-size:7.5px;font-weight:800;line-height:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+footer{padding:3px 8px 5px;color:var(--muted);font-size:8px;text-align:right;flex-shrink:0}
+
+/* Marcadores de resultado desenhados como elementos HTML sobre o mapa (independentes das camadas do estilo). */
+.leader-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
+.bubble-marker{display:flex;align-items:center;justify-content:center;flex-direction:column;width:var(--bubble-size);height:var(--bubble-size);border-radius:50%;background:var(--bubble-color);border:2px solid #fff;box-shadow:0 1px 5px #18232c80;color:#fff;font-weight:850;line-height:1;cursor:pointer;user-select:none;white-space:nowrap;z-index:10;text-align:center;}
+.bubble-marker .bubble-number{font-size:clamp(7px,calc(var(--bubble-size)*.23),10px);line-height:1.05;}
+.bubble-marker .bubble-margin{font-size:clamp(6px,calc(var(--bubble-size)*.18),8px);line-height:1.05;margin-top:2px;}
+.bubble-marker:hover{z-index:100;filter:brightness(1.08);box-shadow:0 2px 8px #18232caa;outline:2px solid #fff;}
+.maplibregl-ctrl-attrib{font-size:9px}
+@media(max-width:1050px){header{height:auto;min-height:68px;align-items:flex-start;flex-direction:column}.actions{width:100%}.main{height:auto;min-height:0;grid-template-columns:1fr;grid-template-rows:58vh auto}.mapcard{height:58vh;min-height:400px}.side{min-height:680px}.list{grid-template-rows:repeat(13,minmax(42px,1fr));}.summary{gap:10px}.main{padding:6px}}
+@media(max-width:650px){header h1{font-size:16px}.actions button{font-size:10px;padding:7px}.main{grid-template-rows:52vh auto}.mapcard{height:52vh;min-height:350px}.side{min-height:1250px}.list{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(20,minmax(0,1fr));gap:4px}.item{padding:3px 5px}.place{font-size:9px}.votes{font-size:8.3px;line-height:9px}.margin{font-size:8px;line-height:9px}}
+</style></head><body>
+<header><div><h1>250ª ZONA ELEITORAL · LAPA</h1><p>Presidência da República · 2º turno · 25 de outubro de 2026</p></div><div class="actions"><button id="export" disabled>Exportar PNG</button><button id="reset">Enquadrar todos</button></div></header>
+<div class="summary" id="summary"></div>
+<main class="main"><section class="mapcard"><div class="mapwrap"><div id="map"></div><div class="map-label">LOCAIS DE VOTAÇÃO · BOLHAS POR MARGEM</div><div id="map-status" style="display:none;position:absolute;z-index:5;top:44px;left:9px;right:9px;background:#fff3cd;color:#5d4800;border:1px solid #d2b76a;border-radius:5px;padding:8px;font-size:11px;font-weight:700"></div><div class="maplegend"><span><i class="dot" style="background:var(--lula)"></i>Lula à frente</span><span><i class="dot" style="background:var(--flavio)"></i>Bolsonaro à frente</span><span><i class="sizes"><i></i><i></i><i></i></i>Maior bolha = maior diferença de votos</span><span>Número = índice · +votos = diferença</span><span>Linha = posição real aproximada do local</span></div></div></section>
+<section class="side"><div class="sidehead"><h2>Resultados por local — todos visíveis</h2><p>Votos e percentuais por local. Cor = candidato à frente; tamanho da bolha = diferença absoluta de votos; dentro dela, índice e vantagem em votos. Todos os resultados permanecem visíveis na lista. Clique em um item para centralizar o mapa.</p></div><div class="list" id="list"></div><footer>Base cartográfica: OpenFreeMap · dados cartográficos © OpenStreetMap contributors</footer></section></main>
+<script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+<script>
+const places = [{"map_num":1,"local_id":1015,"name":"EE Guilherme Kuhlmann","official_name":"EE. GUILHERME KUHLMANN","address":"Largo Da Lapa, 124","bairro":"Lapa De Baixo","lon":-46.7054769,"lat":-23.5149969,"lula":1804,"lula_pct":53.96,"flavio":1539,"flavio_pct":46.04,"brancos":46,"nulos":106,"validos":3343,"total":3495,"winner":"Lula"},{"map_num":2,"local_id":1031,"name":"Colégio e Faculdades Integradas Campos Salles","official_name":"COLÉGIO E FACULDADES INTEGRADAS CAMPOS SALLES","address":"Rua Nossa Senhora Da Lapa, 270","bairro":"Lapa","lon":-46.703755,"lat":-23.5217096,"lula":1647,"lula_pct":52.5,"flavio":1490,"flavio_pct":47.5,"brancos":38,"nulos":66,"validos":3137,"total":3241,"winner":"Lula"},{"map_num":3,"local_id":1040,"name":"EE Anhanguera","official_name":"EE. ANHANGUERA","address":"Rua Antônio Raposo,12-122","bairro":"Lapa","lon":-46.7056586,"lat":-23.5214362,"lula":1380,"lula_pct":50.18,"flavio":1370,"flavio_pct":49.82,"brancos":35,"nulos":54,"validos":2750,"total":2839,"winner":"Lula"},{"map_num":4,"local_id":1058,"name":"EE Pereira Barreto","official_name":"EE. PEREIRA BARRETO","address":"Rua Nossa Senhora Da Lapa, 615","bairro":"Lapa","lon":-46.7053489,"lat":-23.5246448,"lula":1926,"lula_pct":53.93,"flavio":1645,"flavio_pct":46.07,"brancos":38,"nulos":86,"validos":3571,"total":3695,"winner":"Lula"},{"map_num":5,"local_id":1074,"name":"EE Dr. Edmundo de Carvalho","official_name":"EE. DR. EDMUNDO DE CARVALHO","address":"Rua Tibério, 145","bairro":"Agua Branca","lon":-46.6883341,"lat":-23.524725,"lula":1490,"lula_pct":50.66,"flavio":1451,"flavio_pct":49.34,"brancos":45,"nulos":79,"validos":2941,"total":3065,"winner":"Lula"},{"map_num":6,"local_id":1082,"name":"Colégio Pré Médico","official_name":"COLÉGIO PRÉ MÉDICO","address":"Rua Dom João V, 164","bairro":"Lapa","lon":-46.7096357,"lat":-23.5206655,"lula":1532,"lula_pct":46.54,"flavio":1760,"flavio_pct":53.46,"brancos":50,"nulos":113,"validos":3292,"total":3455,"winner":"Flávio Bolsonaro"},{"map_num":7,"local_id":1090,"name":"EE Prof. Ayres de Moura","official_name":"EE. PROF. AYRES DE MOURA","address":"Rua Artur Orlando, 907","bairro":"Vila Jaguara","lon":-46.7490371,"lat":-23.5121271,"lula":579,"lula_pct":42.83,"flavio":773,"flavio_pct":57.17,"brancos":17,"nulos":46,"validos":1352,"total":1415,"winner":"Flávio Bolsonaro"},{"map_num":8,"local_id":1104,"name":"EMEF Prof. José Ferraz de Campos","official_name":"EMEF PROF. JOSÉ FERRAZ DE CAMPOS","address":"Rua Paúva, 644","bairro":"Vila Jaguara","lon":-46.7468784,"lat":-23.5137529,"lula":1348,"lula_pct":49.56,"flavio":1372,"flavio_pct":50.44,"brancos":47,"nulos":93,"validos":2720,"total":2860,"winner":"Flávio Bolsonaro"},{"map_num":9,"local_id":1112,"name":"EE Pio Telles Peixoto","official_name":"EE. PIO TELLES PEIXOTO","address":"Rua Artur Orlando, 985","bairro":"Vila Jaguara","lon":-46.7487646,"lat":-23.5115607,"lula":1132,"lula_pct":49.09,"flavio":1174,"flavio_pct":50.91,"brancos":31,"nulos":80,"validos":2306,"total":2417,"winner":"Flávio Bolsonaro"},{"map_num":10,"local_id":1120,"name":"EE José Monteiro Boanova","official_name":"EE. JOSÉ MONTEIRO BOANOVA","address":"Rua Dalton, 10","bairro":"Alto Da Lapa","lon":-46.722469,"lat":-23.5259324,"lula":1316,"lula_pct":44.46,"flavio":1644,"flavio_pct":55.54,"brancos":41,"nulos":98,"validos":2960,"total":3099,"winner":"Flávio Bolsonaro"},{"map_num":11,"local_id":1139,"name":"EMEF Reynaldo Porchat","official_name":"EMEF. REYNALDO PORCHAT","address":"Rua Dos Aliados, 540","bairro":"Alto Da Lapa","lon":-46.7161655,"lat":-23.5281421,"lula":941,"lula_pct":41.45,"flavio":1329,"flavio_pct":58.55,"brancos":29,"nulos":59,"validos":2270,"total":2358,"winner":"Flávio Bolsonaro"},{"map_num":12,"local_id":1147,"name":"Instituto de Ensino Santo Ivo","official_name":"INSTITUTO DE ENSINO SANTO IVO","address":"Rua Duarte Da Costa, 1246","bairro":"Alto Da Lapa","lon":-46.7187564,"lat":-23.5247359,"lula":953,"lula_pct":39.3,"flavio":1472,"flavio_pct":60.7,"brancos":22,"nulos":79,"validos":2425,"total":2526,"winner":"Flávio Bolsonaro"},{"map_num":13,"local_id":1155,"name":"EE Reinaldo Ribeiro da Silva","official_name":"EE. REINALDO RIBEIRO DA SILVA","address":"Av. Embaixador Macedo Soares, 10935","bairro":"Vila Anastacio","lon":-46.7461317,"lat":-23.5204382,"lula":630,"lula_pct":45.82,"flavio":745,"flavio_pct":54.18,"brancos":20,"nulos":28,"validos":1375,"total":1423,"winner":"Flávio Bolsonaro"},{"map_num":14,"local_id":1163,"name":"EE Alexandre Von Humboldt","official_name":"EE. ALEXANDRE VON HUMBOLDT","address":"Av. Raimundo Pereira De Magalhães, 1201","bairro":"Lapa","lon":-46.7151712,"lat":-23.5090839,"lula":728,"lula_pct":46.64,"flavio":833,"flavio_pct":53.36,"brancos":23,"nulos":51,"validos":1561,"total":1635,"winner":"Flávio Bolsonaro"},{"map_num":15,"local_id":1171,"name":"EE José Altenfelder Silva","official_name":"EE. JOSÉ ALTENFELDER SILVA","address":"Rua Carlos Alberto Vanzolini, 397","bairro":"Vila Dos Remedios","lon":-46.7519095,"lat":-23.5139352,"lula":1394,"lula_pct":49.17,"flavio":1441,"flavio_pct":50.83,"brancos":38,"nulos":76,"validos":2835,"total":2949,"winner":"Flávio Bolsonaro"},{"map_num":16,"local_id":1180,"name":"EE Paulo Nogueira Filho","official_name":"EE. PAULO NOGUEIRA FILHO","address":"Rua Adão Gonçalves, 70","bairro":"Vila Dos Remedios","lon":-46.7545011,"lat":-23.5097174,"lula":1066,"lula_pct":49.44,"flavio":1090,"flavio_pct":50.56,"brancos":27,"nulos":85,"validos":2156,"total":2268,"winner":"Flávio Bolsonaro"},{"map_num":17,"local_id":1198,"name":"EMEF Ministro Aníbal Freire","official_name":"EMEF. MINISTRO ANÍBAL FREIRE","address":"Rua Silva Airosa, 100","bairro":"Vila Ribeiro De Barros","lon":-46.7424182,"lat":-23.5201503,"lula":661,"lula_pct":53.74,"flavio":569,"flavio_pct":46.26,"brancos":21,"nulos":26,"validos":1230,"total":1277,"winner":"Lula"},{"map_num":18,"local_id":1201,"name":"EMEF Dilermando Dias dos Santos","official_name":"EMEF. DILERMANDO DIAS DOS SANTOS","address":"Rua Paulo Franco, 815","bairro":"Vila Leopoldina","lon":-46.7243978,"lat":-23.5362922,"lula":1718,"lula_pct":52.99,"flavio":1524,"flavio_pct":47.01,"brancos":24,"nulos":75,"validos":3242,"total":3341,"winner":"Lula"},{"map_num":19,"local_id":1210,"name":"EE Alfredo Paulino","official_name":"EE. ALFREDO PAULINO","address":"Rua Caativa, 15","bairro":"Alto Da Lapa","lon":-46.7091294,"lat":-23.5350839,"lula":1216,"lula_pct":48.97,"flavio":1267,"flavio_pct":51.03,"brancos":24,"nulos":72,"validos":2483,"total":2579,"winner":"Flávio Bolsonaro"},{"map_num":20,"local_id":1228,"name":"EE Prof. Manuel Ciridião Buarque","official_name":"EE. PROF.MANUEL CIRIDIÃO BUARQUE","address":"Rua Cerro Corá, 770","bairro":"Vila Romana","lon":-46.7036724,"lat":-23.5400795,"lula":1515,"lula_pct":53.88,"flavio":1297,"flavio_pct":46.12,"brancos":39,"nulos":84,"validos":2812,"total":2935,"winner":"Lula"},{"map_num":21,"local_id":1236,"name":"EE Marina Cerqueira César","official_name":"EE.  MARINA CERQUEIRA CÉSAR","address":"Rua Acuruá, 241","bairro":"Vila Romana","lon":-46.7005943,"lat":-23.5378571,"lula":1169,"lula_pct":49.91,"flavio":1173,"flavio_pct":50.09,"brancos":26,"nulos":56,"validos":2342,"total":2424,"winner":"Flávio Bolsonaro"},{"map_num":22,"local_id":1244,"name":"EE Romeu de Moraes","official_name":"EE. ROMEU DE MORAES","address":"Rua Toneleros, 407","bairro":"Vila Ipojuca","lon":-46.7043688,"lat":-23.5315817,"lula":1908,"lula_pct":49.79,"flavio":1924,"flavio_pct":50.21,"brancos":38,"nulos":112,"validos":3832,"total":3982,"winner":"Flávio Bolsonaro"},{"map_num":23,"local_id":1252,"name":"ETEC Prof. Basilides de Godoy","official_name":"ETEC PROF. BASILIDES DE GODOY","address":"Rua Guaipá, 678","bairro":"Vila Leopoldina","lon":-46.7288526,"lat":-23.5210011,"lula":1742,"lula_pct":44.85,"flavio":2142,"flavio_pct":55.15,"brancos":52,"nulos":121,"validos":3884,"total":4057,"winner":"Flávio Bolsonaro"},{"map_num":24,"local_id":1368,"name":"EMEI Antônio Raposo Tavares","official_name":"EMEI ANTÔNIO RAPOSO TAVARES","address":"Av. Mutinga, 4855","bairro":"Vila Piaui","lon":-46.757229,"lat":-23.5028338,"lula":1398,"lula_pct":49.17,"flavio":1445,"flavio_pct":50.83,"brancos":38,"nulos":115,"validos":2843,"total":2996,"winner":"Flávio Bolsonaro"},{"map_num":25,"local_id":1422,"name":"Centro Educacional SESI Gastão Vidigal","official_name":"CENTRO EDUCACIONAL SESI GASTÃO VIDIGAL","address":"Rua Carlos Weber, 835","bairro":"Vila Leopoldina","lon":-46.7297919,"lat":-23.5283044,"lula":2126,"lula_pct":44.2,"flavio":2684,"flavio_pct":55.8,"brancos":57,"nulos":133,"validos":4810,"total":5000,"winner":"Flávio Bolsonaro"},{"map_num":26,"local_id":1430,"name":"EMEI Noemia Ippólito","official_name":"EMEI. NOEMIA IPPÓLITO","address":"Praça Alfredo Weiszflog, S/N","bairro":"Vila Romana","lon":-46.6949169,"lat":-23.52815,"lula":1258,"lula_pct":50.06,"flavio":1255,"flavio_pct":49.94,"brancos":25,"nulos":71,"validos":2513,"total":2609,"winner":"Lula"},{"map_num":27,"local_id":1970,"name":"EE Raul Cortez","official_name":"EE. RAUL CORTEZ","address":"Rua Faustolo, 213","bairro":"Agua Branca","lon":-46.6869873,"lat":-23.5239641,"lula":1996,"lula_pct":54.73,"flavio":1651,"flavio_pct":45.27,"brancos":54,"nulos":91,"validos":3647,"total":3792,"winner":"Lula"},{"map_num":28,"local_id":2011,"name":"CEI Educandário São Domingos","official_name":"CEI EDUCANDÁRIO SÃO DOMINGOS","address":"Rua Presgrave Do Amaral, 160","bairro":"Vila Dos Remedios","lon":-46.7521867,"lat":-23.5162709,"lula":517,"lula_pct":48.59,"flavio":547,"flavio_pct":51.41,"brancos":14,"nulos":41,"validos":1064,"total":1119,"winner":"Flávio Bolsonaro"},{"map_num":29,"local_id":2020,"name":"EMEI Jean Piaget","official_name":"EMEI JEAN PIAGET","address":"Rua Saldanha Da Gama, 485","bairro":"Alto Da Lapa","lon":-46.7127172,"lat":-23.5306272,"lula":663,"lula_pct":51.32,"flavio":629,"flavio_pct":48.68,"brancos":13,"nulos":31,"validos":1292,"total":1336,"winner":"Lula"},{"map_num":30,"local_id":2038,"name":"Colégio Madre Paula Montalt","official_name":"COLÉGIO MADRE PAULA MONTALT","address":"Rua Carlos Weber, 1315","bairro":"Vila Leopoldina","lon":-46.7267663,"lat":-23.5313394,"lula":851,"lula_pct":44.63,"flavio":1056,"flavio_pct":55.37,"brancos":28,"nulos":63,"validos":1907,"total":1998,"winner":"Flávio Bolsonaro"},{"map_num":31,"local_id":2046,"name":"Colégio Módulo","official_name":"COLÉGIO MÓDULO","address":"Rua Tito, 1175","bairro":"Vila Romana","lon":-46.7033283,"lat":-23.528472,"lula":2914,"lula_pct":48.52,"flavio":3092,"flavio_pct":51.48,"brancos":69,"nulos":166,"validos":6006,"total":6241,"winner":"Flávio Bolsonaro"},{"map_num":32,"local_id":2062,"name":"EMEI Pedro de Toledo","official_name":"EMEI PEDRO DE TOLEDO","address":"Rua Paúva, 677","bairro":"Vila Jaguara","lon":-46.7467587,"lat":-23.5136239,"lula":309,"lula_pct":46.26,"flavio":359,"flavio_pct":53.74,"brancos":9,"nulos":13,"validos":668,"total":690,"winner":"Flávio Bolsonaro"},{"map_num":33,"local_id":2070,"name":"EMEI Prof.ª Neyde Guzzi de Chiacchio","official_name":"EMEI. PROFESSORA NEYDE GUZZI DE CHIACCHIO","address":"Largo Da Lapa, S/N","bairro":"Lapa De Baixo","lon":-46.7057164,"lat":-23.5156964,"lula":610,"lula_pct":57.71,"flavio":447,"flavio_pct":42.29,"brancos":10,"nulos":38,"validos":1057,"total":1105,"winner":"Lula"},{"map_num":34,"local_id":2097,"name":"EMEI Ricardo Gonçalves","official_name":"EMEI. RICARDO GONÇALVES","address":"Praça Tcheco, S/N","bairro":"Vila Ipojuca","lon":-46.7067399,"lat":-23.530111,"lula":846,"lula_pct":55.51,"flavio":678,"flavio_pct":44.49,"brancos":23,"nulos":55,"validos":1524,"total":1602,"winner":"Lula"},{"map_num":35,"local_id":2178,"name":"Colégio Oswald de Andrade","official_name":"COLÉGIO OSWALD DE ANDRADE","address":"Rua Cerro Corá, 2375","bairro":"Lapa","lon":-46.7178182,"lat":-23.5361639,"lula":1425,"lula_pct":58.93,"flavio":993,"flavio_pct":41.07,"brancos":33,"nulos":70,"validos":2418,"total":2521,"winner":"Lula"},{"map_num":36,"local_id":2232,"name":"Universidade Cruzeiro do Sul","official_name":"UNIVERSIDADE CRUZEIRO DO SUL","address":"Av. Imperatriz Leopoldina, 550","bairro":"Vila Leopoldina","lon":-46.7255,"lat":-23.5317,"lula":2398,"lula_pct":45.62,"flavio":2859,"flavio_pct":54.38,"brancos":72,"nulos":146,"validos":5257,"total":5475,"winner":"Flávio Bolsonaro"},{"map_num":37,"local_id":2267,"name":"CDP III — Centro de Detenção Provisória de Pinheiros III","official_name":"CDP III  CENTRO DE DETENÇÃO PROVISÓRIA DE PINHEIROS III","address":"Av. Dra Ruth Cardoso, 1230","bairro":"Vila Leopoldina","lon":-46.74632,"lat":-23.53308,"lula":30,"lula_pct":76.92,"flavio":9,"flavio_pct":23.08,"brancos":2,"nulos":0,"validos":39,"total":41,"winner":"Lula"},{"map_num":38,"local_id":2356,"name":"Colégio Heitor Garcia — Unidade II","official_name":"COLÉGIO HEITOR GARCIA UNIDADE II","address":"Rua Roma, 350","bairro":"Lapa","lon":-46.7000747,"lat":-23.5225962,"lula":1515,"lula_pct":46.13,"flavio":1769,"flavio_pct":53.87,"brancos":36,"nulos":103,"validos":3284,"total":3423,"winner":"Flávio Bolsonaro"},{"map_num":39,"local_id":2399,"name":"Universidade São Judas Tadeu — Campus Leopoldina","official_name":"UNIVERSIDADE SÃO JUDAS TADEU - CAMPUS LEOPOLDINA","address":"Avenida Imperatriz Leopoldina, 112","bairro":"Vila Leopoldina","lon":-46.727,"lat":-23.5291,"lula":894,"lula_pct":51.44,"flavio":844,"flavio_pct":48.56,"brancos":30,"nulos":53,"validos":1738,"total":1821,"winner":"Lula"}];
+const lulaColor='#b52e43', flavioColor='#275c91', ink='#202a32';
+const fmt=n=>Number(n).toLocaleString('pt-BR'); const pct=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+const winnerColor=p=>p.winner==='Lula'?lulaColor:flavioColor;
+places.forEach(p=>{p.margin=Math.abs(p.flavio-p.lula);p.radius=7+0.5*Math.sqrt(p.margin);p.leader=p.flavio>p.lula?'Flávio Bolsonaro':'Lula';});
+const totalL=places.reduce((s,p)=>s+p.lula,0), totalF=places.reduce((s,p)=>s+p.flavio,0), white=places.reduce((s,p)=>s+p.brancos,0), nulls=places.reduce((s,p)=>s+p.nulos,0);
+const winL=places.filter(p=>p.winner==='Lula').length, winF=places.length-winL, valid=totalL+totalF;
+document.getElementById('summary').innerHTML = `
+ <div class="stat"><i class="swatch" style="background:${lulaColor}"></i><strong>Lula ${fmt(totalL)}</strong><small>${pct(100*totalL/valid)}</small></div>
+ <div class="stat"><i class="swatch" style="background:${flavioColor}"></i><strong>Flávio Bolsonaro ${fmt(totalF)}</strong><small>${pct(100*totalF/valid)}</small></div>
+ <div class="stat"><strong>Margem: ${fmt(Math.abs(totalF-totalL))} votos</strong><small>${pct(100*Math.abs(totalF-totalL)/valid)} p.p.</small></div>
+ <div class="stat"><strong>${winL} × ${winF} locais</strong><small>Lula × Flávio</small></div>`;
+const list=document.getElementById('list');
+places.forEach(p=>{
+ const el=document.createElement('button');el.className='item';el.id='item-'+p.map_num;el.title=p.name;
+ el.innerHTML=`<div class="itemtop"><span class="number" style="background:${winnerColor(p)}">${String(p.map_num).padStart(2,'0')}</span><span class="place" title="${p.name.replace(/"/g,'&quot;')}">${p.name}</span></div>
+ <div class="votes"><span class="l">Lula ${fmt(p.lula)} (${pct(p.lula_pct)})</span><span class="f">Bolsonaro ${fmt(p.flavio)} (${pct(p.flavio_pct)})</span></div>
+ <div class="margin" style="color:${winnerColor(p)}">Vantagem: ${fmt(p.margin)} votos</div>`;
+ el.addEventListener('click',()=>focusPlace(p));list.appendChild(el);
+});
+const geojson={type:'FeatureCollection',features:places.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lon,p.lat]},properties:{...p}}))};
+const bounds=[Math.min(...places.map(p=>p.lon)),Math.min(...places.map(p=>p.lat)),Math.max(...places.map(p=>p.lon)),Math.max(...places.map(p=>p.lat))];
+const map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/bright',center:[(bounds[0]+bounds[2])/2,(bounds[1]+bounds[3])/2],zoom:10.8,attributionControl:true,preserveDrawingBuffer:true});
+const SVG_NS='http://www.w3.org/2000/svg';
+const leaderSvg=document.createElementNS(SVG_NS,'svg');
+leaderSvg.setAttribute('class','leader-overlay');leaderSvg.setAttribute('aria-hidden','true');
+map.getContainer().appendChild(leaderSvg);
+const markerRecords=[];
+map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');map.addControl(new maplibregl.ScaleControl({maxWidth:100,unit:'metric'}),'bottom-right');
+function fitAll(){map.fitBounds([[bounds[0]-0.004,bounds[1]-0.004],[bounds[2]+0.004,bounds[3]+0.004]],{padding:{top:60,bottom:70,left:45,right:45},duration:650,maxZoom:14.5});}
+let resultMarkersDrawn=false;
+function drawResultMarkers(){
+ if(resultMarkersDrawn) return;
+ resultMarkersDrawn=true;
+ const maxMargin=Math.max(...places.map(p=>p.margin));
+ places.forEach(p=>{
+  // Diameter follows the square root of the absolute vote margin.
+  const d=Math.round(24+24*Math.sqrt(p.margin/maxMargin));
+  const el=document.createElement('div');
+  el.className='bubble-marker';
+  el.style.setProperty('--bubble-size',d+'px');
+  el.style.setProperty('--bubble-color',winnerColor(p));
+  el.innerHTML=`<span class="bubble-number">${String(p.map_num).padStart(2,'0')}</span><span class="bubble-margin">+${fmt(p.margin)}</span>`;
+  el.title=`${p.map_num}. ${p.name} — Lula ${fmt(p.lula)} (${pct(p.lula_pct)}); Bolsonaro ${fmt(p.flavio)} (${pct(p.flavio_pct)}); diferença ${fmt(p.margin)} votos`;
+  el.setAttribute('role','button');
+  el.setAttribute('aria-label',el.title);
+  el.addEventListener('click',ev=>{
+   ev.stopPropagation();
+   document.querySelectorAll('.item').forEach(x=>x.classList.remove('active'));
+   document.getElementById('item-'+p.map_num)?.classList.add('active');
+   new maplibregl.Popup({offset:12,maxWidth:'300px'}).setLngLat([p.lon,p.lat]).setHTML(
+    `<div style="font-weight:800;margin-bottom:5px">${p.map_num}. ${p.name}</div>`+
+    `<div style="color:${lulaColor};font-weight:700">Lula: ${fmt(p.lula)} (${pct(p.lula_pct)})</div>`+
+    `<div style="color:${flavioColor};font-weight:700">Bolsonaro: ${fmt(p.flavio)} (${pct(p.flavio_pct)})</div>`+
+    `<div style="margin-top:4px;font-weight:700">Diferença: ${fmt(p.margin)} votos</div>`
+   ).addTo(map);
+  });
+  const marker=new maplibregl.Marker({element:el,anchor:'center',offset:[0,0]}).setLngLat([p.lon,p.lat]).addTo(map);
+  markerRecords.push({p,marker,el,d,offset:{x:0,y:0}});
+ });
+ updateBubbleLayout();
+}
+
+// Separates overlapping circles in screen space while preserving the real map coordinate.
+// A thin leader line links every displaced circle back to that coordinate.
+function updateBubbleLayout(){
+ if(!markerRecords.length) return;
+ const mapEl=map.getContainer();
+ const width=mapEl.clientWidth,height=mapEl.clientHeight;
+ if(width<1||height<1) return;
+ const nodes=markerRecords.map(rec=>{
+  const pt=map.project([rec.p.lon,rec.p.lat]);
+  return {rec,px:pt.x,py:pt.y,x:pt.x,y:pt.y,r:rec.d/2};
+ });
+ // Collision resolution is deterministic: same inputs and zoom produce the same offsets.
+ for(let iter=0;iter<140;iter++){
+  let changed=false;
+  for(let i=0;i<nodes.length;i++){
+   const a=nodes[i];
+   for(let j=i+1;j<nodes.length;j++){
+    const b=nodes[j];
+    let dx=b.x-a.x,dy=b.y-a.y;
+    let dist=Math.hypot(dx,dy);
+    const minDist=a.r+b.r+5;
+    if(dist>=minDist) continue;
+    if(dist<0.01){
+     const angle=((a.rec.p.map_num*67+b.rec.p.map_num*131)%360)*Math.PI/180;
+     dx=Math.cos(angle);dy=Math.sin(angle);dist=1;
+    }
+    const push=(minDist-dist)/2+0.08;
+    const ux=dx/dist,uy=dy/dist;
+    a.x-=ux*push;a.y-=uy*push;
+    b.x+=ux*push;b.y+=uy*push;
+    changed=true;
+   }
+  }
+  // Keep displaced markers inside the visible map area where possible.
+  for(const n of nodes){
+   const nx=Math.max(n.r+3,Math.min(width-n.r-3,n.x));
+   const ny=Math.max(n.r+3,Math.min(height-n.r-3,n.y));
+   if(nx!==n.x||ny!==n.y) changed=true;
+   n.x=nx;n.y=ny;
+  }
+  if(!changed) break;
+ }
+ // Draw lines first; marker DOM sits above the SVG overlay.
+ leaderSvg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+ leaderSvg.setAttribute('width',String(width));leaderSvg.setAttribute('height',String(height));
+ let svg='';
+ for(const n of nodes){
+  const ox=n.x-n.px,oy=n.y-n.py,dist=Math.hypot(ox,oy);
+  n.rec.offset={x:ox,y:oy};
+  n.rec.marker.setOffset([ox,oy]);
+  if(dist<6) continue;
+  const ux=ox/dist,uy=oy/dist;
+  const ex=n.x-ux*(n.r+1.5),ey=n.y-uy*(n.r+1.5);
+  svg+=`<line x1="${n.px.toFixed(2)}" y1="${n.py.toFixed(2)}" x2="${ex.toFixed(2)}" y2="${ey.toFixed(2)}" stroke="#fffefa" stroke-width="3.4" stroke-linecap="round" opacity=".92"/>`;
+  svg+=`<line x1="${n.px.toFixed(2)}" y1="${n.py.toFixed(2)}" x2="${ex.toFixed(2)}" y2="${ey.toFixed(2)}" stroke="#36434a" stroke-width="1.45" stroke-linecap="round" opacity=".9"/>`;
+  svg+=`<circle cx="${n.px.toFixed(2)}" cy="${n.py.toFixed(2)}" r="3.1" fill="#fffefa" stroke="#36434a" stroke-width="1.4"/>`;
+ }
+ leaderSvg.innerHTML=svg;
+}
+map.on('load',()=>{
+ try{drawResultMarkers()}catch(err){resultMarkersDrawn=false;console.error('Falha ao desenhar bolhas de resultado:',err)}
+ fitAll();
+ updateBubbleLayout();
+ document.getElementById('export').disabled=false;
+});
+try{drawResultMarkers()}catch(err){resultMarkersDrawn=false;console.warn('Tentativa inicial de desenhar as bolhas falhou; será repetida após carregar o mapa.',err)}
+map.on('move',updateBubbleLayout);
+map.on('zoom',updateBubbleLayout);
+map.on('rotate',updateBubbleLayout);
+map.on('pitch',updateBubbleLayout);
+map.on('resize',updateBubbleLayout);
+map.on('moveend',updateBubbleLayout);
+map.on('error',e=>{
+ // A visible fallback message helps diagnose a blocked map-style service.
+ const msg=document.getElementById('map-status');
+ if(msg && !msg.dataset.shown){msg.dataset.shown='1';msg.textContent='A base de ruas não carregou. Verifique a conexão com a internet e recarregue a página.';msg.style.display='block';}
+});
+function focusPlace(p){map.flyTo({center:[p.lon,p.lat],zoom:15,duration:550});document.querySelectorAll('.item').forEach(x=>x.classList.remove('active'));document.getElementById('item-'+p.map_num)?.classList.add('active');}
+document.getElementById('reset').addEventListener('click',fitAll);
+function roundRect(ctx,x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}}
+function wrap(ctx,text,maxWidth){let words=String(text).split(/\s+/),lines=[],line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines}
+function drawMultiline(ctx,text,x,y,maxWidth,lineHeight,maxLines){const lines=wrap(ctx,text,maxWidth);lines.slice(0,maxLines).forEach((line,i)=>ctx.fillText(line,x,y+i*lineHeight));return Math.min(lines.length,maxLines)}
+function exportPNG(){
+ const btn=document.getElementById('export');btn.disabled=true;btn.textContent='Preparando PNG…';
+ try{
+  const mapData=map.getCanvas().toDataURL('image/png'); const img=new Image();
+  img.onload=()=>{try{
+    const W=3600,H=2000,headerH=250,margin=55,gap=35,mapX=margin,mapY=headerH+margin,mapW=2040,mapH=H-mapY-margin,panelX=mapX+mapW+gap,panelW=W-panelX-margin,panelH=mapH;
+    const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle='#f4f2ed';x.fillRect(0,0,W,H);
+    x.fillStyle=ink;x.fillRect(0,0,W,headerH);x.fillStyle='#ffffff';x.font='800 48px Arial';x.fillText('250ª ZONA ELEITORAL · LAPA',margin,72);x.fillStyle='#dce3e7';x.font='26px Arial';x.fillText('Presidência da República · 2º turno · 25 de outubro de 2026',margin,116);
+    const sy=155;x.font='bold 21px Arial';x.fillStyle='#f2bac3';x.fillText(`Lula  ${fmt(totalL)}  ·  ${pct(100*totalL/valid)}`,margin,sy);x.fillStyle='#b7d6f5';x.fillText(`Flávio Bolsonaro  ${fmt(totalF)}  ·  ${pct(100*totalF/valid)}`,margin+520,sy);
+    x.fillStyle='#ffffff';x.fillText(`Margem ${fmt(Math.abs(totalF-totalL))} votos`,margin+1170,sy);x.fillText(`Vitórias por local: Lula ${winL} · Flávio ${winF}`,margin+1630,sy);
+    roundRect(x,mapX,mapY,mapW,mapH,12,'#ffffff','#d7d6cf');x.save();x.beginPath();x.roundRect(mapX+2,mapY+2,mapW-4,mapH-4,10);x.clip();x.drawImage(img,mapX,mapY,mapW,mapH);
+    // DOM markers do not belong to the WebGL canvas, so draw matching bubbles into the exported PNG too.
+    const mapEl=document.getElementById('map');const cssW=mapEl.clientWidth||1,cssH=mapEl.clientHeight||1;
+    const maxM=Math.max(...places.map(p=>p.margin));const scaleX=mapW/cssW,scaleY=mapH/cssH,bubbleScale=(scaleX+scaleY)/2;
+    // Leader lines and their anchor dots are drawn first, matching the live map layout.
+    x.save();x.lineCap='round';
+    markerRecords.forEach(rec=>{const p=rec.p,pt=map.project([p.lon,p.lat]),baseX=mapX+pt.x*scaleX,baseY=mapY+pt.y*scaleY,cx=mapX+(pt.x+rec.offset.x)*scaleX,cy=mapY+(pt.y+rec.offset.y)*scaleY,dist=Math.hypot(cx-baseX,cy-baseY),radius=rec.d*bubbleScale/2;
+      if(dist<6*bubbleScale)return;const ux=(cx-baseX)/dist,uy=(cy-baseY)/dist,ex=cx-ux*(radius+2),ey=cy-uy*(radius+2);
+      x.beginPath();x.moveTo(baseX,baseY);x.lineTo(ex,ey);x.lineWidth=4*bubbleScale;x.strokeStyle='#fffefa';x.globalAlpha=.95;x.stroke();
+      x.beginPath();x.moveTo(baseX,baseY);x.lineTo(ex,ey);x.lineWidth=1.7*bubbleScale;x.strokeStyle='#36434a';x.globalAlpha=.92;x.stroke();
+      x.beginPath();x.arc(baseX,baseY,3*bubbleScale,0,Math.PI*2);x.fillStyle='#fffefa';x.fill();x.lineWidth=1.5*bubbleScale;x.strokeStyle='#36434a';x.stroke();x.globalAlpha=1;
+    });x.restore();
+    markerRecords.forEach(rec=>{const p=rec.p,pt=map.project([p.lon,p.lat]),cx=mapX+(pt.x+rec.offset.x)*scaleX,cy=mapY+(pt.y+rec.offset.y)*scaleY,d=rec.d*bubbleScale;
+      x.save();x.beginPath();x.arc(cx,cy,d/2,0,Math.PI*2);x.fillStyle=winnerColor(p);x.fill();x.lineWidth=Math.max(2,2*bubbleScale);x.strokeStyle='#ffffff';x.stroke();
+      x.textAlign='center';x.textBaseline='middle';x.fillStyle='#ffffff';x.font=`800 ${Math.max(11,8*bubbleScale)}px Arial`;x.fillText(String(p.map_num).padStart(2,'0'),cx,cy-d*.12);
+      x.font=`800 ${Math.max(8,6*bubbleScale)}px Arial`;x.fillText('+'+fmt(p.margin),cx,cy+d*.19);x.restore();
+    });
+    x.restore();
+    roundRect(x,panelX,mapY,panelW,panelH,12,'#fffefa','#d7d6cf');x.fillStyle=ink;x.font='bold 31px Arial';x.fillText('RESULTADO POR LOCAL',panelX+25,mapY+42);x.fillStyle='#5c666d';x.font='17px Arial';x.fillText('Marcadores numerados correspondem ao índice; valores por local.',panelX+25,mapY+72);
+    const innerX=panelX+22,innerY=mapY+103,cols=3,cgap=12,colW=(panelW-44-2*cgap)/3,rowH=(panelH-125)/13;
+    places.forEach((p,i)=>{const col=Math.floor(i/13),row=i%13,xx=innerX+col*(colW+cgap),yy=innerY+row*rowH,hh=rowH-6,color=winnerColor(p);roundRect(x,xx,yy,colW,hh,7,row%2?'#ffffff':'#f2f1eb','#e4e2da');roundRect(x,xx,yy,6,hh,3,color,null);
+      x.fillStyle=color;x.beginPath();x.arc(xx+25,yy+25,15,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.font='bold 13px Arial';x.textAlign='center';x.fillText(String(p.map_num).padStart(2,'0'),xx+25,yy+30);x.textAlign='left';
+      const tx=xx+47,tw=colW-58;x.fillStyle=ink;x.font='bold 16px Arial';drawMultiline(x,p.name,tx,yy+20,tw,18,2);
+      x.fillStyle=lulaColor;x.font='bold 14px Arial';x.fillText(`Lula ${fmt(p.lula)} (${pct(p.lula_pct)})`,tx,yy+58);
+      x.fillStyle=flavioColor;x.fillText(`Flávio ${fmt(p.flavio)} (${pct(p.flavio_pct)})`,tx,yy+81);
+    });
+    x.fillStyle='#5c666d';x.font='16px Arial';x.fillText('Cartografia: OpenFreeMap · dados cartográficos © OpenStreetMap contributors',mapX+5,H-22);x.textAlign='right';x.fillText('Votos: TSE · locais: TRE-SP. Marcadores geográficos aproximados; não usar para navegação.',W-margin,H-22);x.textAlign='left';
+    const a=document.createElement('a');a.download='mapa_resultado_250a_lapa_2026_osm_bolhas.png';a.href=c.toDataURL('image/png');a.click();
+  }catch(e){alert('Não foi possível montar o PNG: '+e.message)}finally{btn.disabled=false;btn.textContent='Exportar PNG para compartilhar'}};
+  img.onerror=()=>{alert('Falha ao compor a imagem do mapa. Tente novamente depois que o mapa carregar completamente.');btn.disabled=false;btn.textContent='Exportar PNG para compartilhar'};
+  img.src=mapData;
+ }catch(e){alert('Falha ao exportar: '+e.message);btn.disabled=false;btn.textContent='Exportar PNG para compartilhar'}
+}
+document.getElementById('export').addEventListener('click',exportPNG);
+</script></body></html>
