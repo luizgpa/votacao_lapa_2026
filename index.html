@@ -105,11 +105,18 @@ function updateBubbleLayout(){
  const mapEl=map.getContainer();
  const width=mapEl.clientWidth,height=mapEl.clientHeight;
  if(width<1||height<1) return;
- const nodes=markerRecords.map(rec=>{
+ const nodes=[];
+ // First test the true geographic anchor. Places whose original point is outside
+ // the visible map area are hidden and excluded from collision handling.
+ for(const rec of markerRecords){
   const pt=map.project([rec.p.lon,rec.p.lat]);
-  return {rec,px:pt.x,py:pt.y,x:pt.x,y:pt.y,r:rec.d/2};
- });
- // Collision resolution is deterministic: same inputs and zoom produce the same offsets.
+  const inside=Number.isFinite(pt.x)&&Number.isFinite(pt.y)&&pt.x>=0&&pt.x<=width&&pt.y>=0&&pt.y<=height;
+  rec.visible=inside;
+  rec.el.style.display=inside?'flex':'none';
+  if(!inside){rec.offset={x:0,y:0};rec.marker.setOffset([0,0]);continue;}
+  nodes.push({rec,px:pt.x,py:pt.y,x:pt.x,y:pt.y,r:rec.d/2});
+ }
+ // Resolve overlaps among visible locations only.
  for(let iter=0;iter<140;iter++){
   let changed=false;
   for(let i=0;i<nodes.length;i++){
@@ -131,7 +138,7 @@ function updateBubbleLayout(){
     changed=true;
    }
   }
-  // Keep displaced markers inside the visible map area where possible.
+  // Keep visible bubbles inside the map container.
   for(const n of nodes){
    const nx=Math.max(n.r+3,Math.min(width-n.r-3,n.x));
    const ny=Math.max(n.r+3,Math.min(height-n.r-3,n.y));
@@ -140,7 +147,7 @@ function updateBubbleLayout(){
   }
   if(!changed) break;
  }
- // Draw lines first; marker DOM sits above the SVG overlay.
+ // Draw connector lines first; the bubble markers sit above this SVG.
  leaderSvg.setAttribute('viewBox',`0 0 ${width} ${height}`);
  leaderSvg.setAttribute('width',String(width));leaderSvg.setAttribute('height',String(height));
  let svg='';
